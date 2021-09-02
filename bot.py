@@ -25,11 +25,8 @@ async def field_cmd(ctx):
     if game_invite.status == invite.GameStatus.cancelled:
         await ctx.send("Game cancelled")
     elif game_invite.status == invite.GameStatus.requested_to_start:
-        print(game_invite.participants)
         view = game.Game(ctx=ctx, players=game_invite.participants)
         msg = await ctx.send(content=view.content, view=view)
         view.message = msg
-        await view.wait()
-        print("Done!")
 
 bot.run(config.token)

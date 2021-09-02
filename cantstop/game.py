@@ -130,7 +130,6 @@ class Game(ui.View):
             [dice[0] + dice[2], dice[1] + dice[3]],
             [dice[0] + dice[3], dice[1] + dice[2]]
         ]
-        print(self.active_columns)
         if len(self.active_columns) != 2:
             self.add_item(ForwardButton(*variants[0]))
             self.add_item(ForwardButton(*variants[1]))
