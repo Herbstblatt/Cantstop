@@ -31,8 +31,8 @@ async def field_cmd(interaction: discord.Interaction):
 
     game_invite = invite.InviteView(host=interaction.user)
     await interaction.response.send_message(
-        f"Participants:\n{LIST_MARKER} {interaction.user}", 
-        view=game_invite
+        view=game_invite,
+        content=game_invite.render()
     )
     await game_invite.wait()
     
