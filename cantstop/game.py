@@ -86,6 +86,8 @@ class ContinueButton(ui.Button):
         await self.view.continue_turn(interaction)
 
 class Game(ui.View):
+    message: discord.Message
+
     def __init__(self, ctx, players):
         super().__init__(timeout=None)
         random.shuffle(players)
@@ -113,6 +115,8 @@ class Game(ui.View):
             else:
                 self.content += NOTHING
             self.content += f" {str(player)} ({self.taken_columns[player]} {POINTS[color.value]})\n"
+        self.content += f"\nColumns that {self.current_player} is on now: "
+        self.content += ", ".join([str(col) for col in self.active_columns])
         self.content += "\n"
         self.content += self.current_field.render()
 
