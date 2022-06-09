@@ -14,23 +14,32 @@ class Bot(commands.Bot):
             intents=discord.Intents.default(),  
             **kwargs
         )
+
+    async def setup_hook(self) -> None:
+        await self.load_extension("jishaku")
         
     async def on_ready(self):
         print(f'Logged on as {self.user}')
 
 bot = Bot()  
 
-@bot.command(name="game")
-async def field_cmd(ctx):
-    game_invite = invite.InviteView(caller=ctx.author)
-    await ctx.send(f"Participants:\n{LIST_MARKER} {ctx.author}", view=game_invite)
+@bot.tree.command(name="game")
+async def field_cmd(interaction: discord.Interaction):
+    """Start a new game
+    
+    """
+
+    game_invite = invite.InviteView(host=interaction.user)
+    await interaction.response.send_message(
+        f"Participants:\n{LIST_MARKER} {interaction.user}", 
+        view=game_invite
+    )
     await game_invite.wait()
     
     if game_invite.status == invite.GameStatus.cancelled:
-        await ctx.send("Game cancelled")
+        await interaction.followup.send(f"{interaction.user} cancelled the game :confused:")
     elif game_invite.status == invite.GameStatus.requested_to_start:
-        view = game.Game(ctx=ctx, players=game_invite.participants)
-        msg = await ctx.send(content=view.content, view=view)
-        view.message = msg
+        view = game.Game(players=game_invite.participants)
+        await interaction.followup.send(content=view.content, view=view)
 
 bot.run(config.token)

@@ -3,6 +3,7 @@ import random
 from collections import defaultdict
 import copy
 import asyncio
+from typing import List, Union
 
 import discord
 from discord import ui
@@ -11,6 +12,8 @@ from .field import Field, Point
 from .constants import *
 
 class ForwardButton(ui.Button):
+    view: "Game"
+    
     def __init__(self, first_column, second_column=None, **kwards):
         super().__init__(style=discord.ButtonStyle.primary)
         self.first_column = first_column
@@ -66,6 +69,8 @@ class ForwardButton(ui.Button):
             self.view.current_taken_columns[self.view.current_player] += 1
 
 class StopButton(ui.Button):
+    view: "Game"
+
     def __init__(self, **kwards):
         super().__init__(style=discord.ButtonStyle.grey, label="Stop")
 
@@ -76,6 +81,8 @@ class StopButton(ui.Button):
         await self.view.next_turn(interaction)
 
 class ContinueButton(ui.Button):
+    view: "Game"
+
     def __init__(self, **kwards):
         super().__init__(style=discord.ButtonStyle.blurple, label="Continue")
 
@@ -86,9 +93,9 @@ class ContinueButton(ui.Button):
         await self.view.continue_turn(interaction)
 
 class Game(ui.View):
-    message: discord.Message
+    children: List[Union[ForwardButton, StopButton, ContinueButton]]
 
-    def __init__(self, ctx, players):
+    def __init__(self, players):
         super().__init__(timeout=None)
         random.shuffle(players)
         self.players_order = cycle(players)
@@ -145,7 +152,9 @@ class Game(ui.View):
                 else:
                     self.add_item(ForwardButton(variant[0]))
                     self.add_item(ForwardButton(variant[1]))
+        
         for child in self.children:
+            assert isinstance(child, ForwardButton)
             child.setup()
 
     def is_able_to_move(self, column):
@@ -166,10 +175,10 @@ class Game(ui.View):
         self.add_item(StopButton(style=discord.ButtonStyle.grey))
         await interaction.response.edit_message(view=self, content=self.content)
 
-    async def check_turn_ability(self):
+    async def check_turn_ability(self, interaction):
         if all(child.disabled for child in self.children):
             await asyncio.sleep(2)
-            await self.next_turn(reset=True)
+            await self.next_turn(interaction, reset=True)
 
     async def continue_turn(self, interaction):
         if winner := self.check_winner():
@@ -178,9 +187,9 @@ class Game(ui.View):
         
         self.add_forward_buttons()
         await interaction.response.edit_message(view=self, content=self.content)
-        await self.check_turn_ability()
+        await self.check_turn_ability(interaction)
 
-    async def next_turn(self, interaction=None, reset=False):
+    async def next_turn(self, interaction: discord.Interaction, *, reset: bool = False):
         if winner := self.check_winner():
             await self.finalize(interaction, winner)
             return
@@ -196,12 +205,12 @@ class Game(ui.View):
         self.active_columns = []
         self.update_content()
         self.add_forward_buttons()
-        if interaction:
+        if not reset:
             await interaction.response.edit_message(view=self, content=self.content)
         else:
-            await self.message.edit(view=self, content=self.content)
+            await interaction.edit_original_message(view=self, content=self.content)
 
-        await self.check_turn_ability()
+        await self.check_turn_ability(interaction)
 
     async def finalize(self, interaction, winner):
         self.clear_items()
