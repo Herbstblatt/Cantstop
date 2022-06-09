@@ -24,21 +24,21 @@ class InviteView(ui.View):
         self.stop()
 
     @ui.button(label="Записаться", style=discord.ButtonStyle.green)
-    async def entry(self, button, interaction):
+    async def entry(self, interaction, button):
         if interaction.user not in self.participants:
             self.participants.append(interaction.user)
             participants = [str(m) for m in self.participants]
             await interaction.response.edit_message(content=f"Участники:\n{LIST_MARKER} " + f"\n{LIST_MARKER} ".join(participants))
 
     @ui.button(label="Выйти из игры", style=discord.ButtonStyle.grey)
-    async def exit(self, button, interaction):
+    async def exit(self, interaction, button):
         if interaction.user in self.participants:
             self.participants.remove(interaction.user)
             participants = [str(m) for m in self.participants]
             await interaction.response.edit_message(content=f"Участники:\n{LIST_MARKER} " + f"\n{LIST_MARKER} ".join(participants))
 
     @ui.button(label="Начать игру", style=discord.ButtonStyle.blurple)
-    async def begin(self, button, interaction):
+    async def begin(self, interaction, button):
         if interaction.user == self.caller:
             self.status = GameStatus.requested_to_start
             await self.finalize(interaction)
@@ -46,7 +46,7 @@ class InviteView(ui.View):
             await interaction.response.send_message("Начать игру может только её создатель.")
     
     @ui.button(label="Отменить игру", style=discord.ButtonStyle.red)
-    async def cancel(self, button, interaction):
+    async def cancel(self, interaction, button):
         if interaction.user == self.caller:
             self.status = GameStatus.cancelled
             await self.finalize(interaction)
