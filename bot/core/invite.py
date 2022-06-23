@@ -3,7 +3,7 @@ import enum
 from discord import ui
 import discord
 
-from .constants import LIST_MARKER, OTHER_MARKER
+from ..games.cantstop.constants import LIST_MARKER, OTHER_MARKER
 
 class GameStatus(enum.Enum):
     requested_to_start = 1

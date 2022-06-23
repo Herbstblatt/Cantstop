@@ -3,9 +3,9 @@
 from discord.ext import commands
 import discord
 
-import config
-from cantstop import game, invite
-from cantstop.constants import LIST_MARKER
+from . import invite
+from ..games.cantstop import game
+from ..games.cantstop.constants import LIST_MARKER
 
 class Bot(commands.Bot):
     def __init__(self, **kwargs):
@@ -42,4 +42,3 @@ async def field_cmd(interaction: discord.Interaction):
         view = game.Game(players=game_invite.participants)
         await interaction.followup.send(content=view.content, view=view)
 
-bot.run(config.token)
