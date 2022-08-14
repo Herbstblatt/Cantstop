@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
+from typing import Dict
+import os
+
 from discord.ext import commands
 import discord
 
 from . import invite
+from .game import Game
 from ..games.cantstop import game
-from ..games.cantstop.constants import LIST_MARKER
 
 class Bot(commands.Bot):
     def __init__(self, **kwargs):
@@ -14,6 +17,10 @@ class Bot(commands.Bot):
             intents=discord.Intents.default(),  
             **kwargs
         )
+
+        self.games: Dict[str, Game] = {}
+        for dir in os.listdir("bot/games"):
+            self.games[dir] = Game.from_dir(dir)
 
     async def setup_hook(self) -> None:
         await self.load_extension("jishaku")
