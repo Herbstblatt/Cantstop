@@ -7,7 +7,7 @@ from discord.ext import commands
 import discord
 
 from . import invite
-from .game import Game
+from .game import Game, load_games
 from ..games.cantstop import game
 
 class Bot(commands.Bot):
@@ -18,23 +18,23 @@ class Bot(commands.Bot):
             **kwargs
         )
 
-        self.games: Dict[str, Game] = {}
-        for dir in os.listdir("bot/games"):
-            self.games[dir] = Game.from_dir(dir)
+        self.games = load_games()
 
     async def setup_hook(self) -> None:
         await self.load_extension("jishaku")
+        await self.load_extension("bot.core.cog")
         
     async def on_ready(self):
         print(f'Logged on as {self.user}')
 
 bot = Bot()  
 
+"""
 @bot.tree.command(name="game")
 async def field_cmd(interaction: discord.Interaction):
-    """Start a new game
+    """#Start a new game
     
-    """
+"""
 
     game_invite = invite.InviteView(host=interaction.user)
     await interaction.response.send_message(
@@ -48,4 +48,5 @@ async def field_cmd(interaction: discord.Interaction):
     elif game_invite.status == invite.GameStatus.requested_to_start:
         view = game.Game(players=game_invite.participants)
         await interaction.followup.send(content=view.content, view=view)
+"""
 

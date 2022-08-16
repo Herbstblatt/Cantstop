@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import importlib
 import os
-from typing import Awaitable, Callable, List
+from typing import Awaitable, Callable, Dict, List
 
 import discord
 import yaml
@@ -32,3 +32,10 @@ class Game:
 
     async def start(self, interaction: discord.Interaction, participants: List[discord.Member]) -> None:
         await self.callback(interaction, participants)
+
+
+def load_games() -> Dict[str, Game]:
+    games = {}
+    for dir in os.listdir("bot/games"):
+        games[dir] = Game.from_dir(dir)
+    return games
