@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
-from typing import Dict
-import os
-
+from typing import Any
 from discord.ext import commands
 import discord
 
-from . import invite
-from .game import Game, load_games
-from ..games.cantstop import game
+from .game import load_games
 
 class Bot(commands.Bot):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: dict[str, Any]):
         super().__init__(
             command_prefix=commands.when_mentioned_or('$'), 
             intents=discord.Intents.default(),  
@@ -27,7 +23,9 @@ class Bot(commands.Bot):
     async def on_ready(self):
         print(f'Logged on as {self.user}')
 
-bot = Bot()  
+bot = Bot()
+
+Context = commands.Context[Bot]
 
 """
 @bot.tree.command(name="game")

@@ -35,7 +35,7 @@ class Game:
 
 
 def load_games() -> Dict[str, Game]:
-    games = {}
+    games: dict[str, Game] = {}
     for dir in os.listdir("bot/games"):
         games[dir] = Game.from_dir(dir)
     return games
