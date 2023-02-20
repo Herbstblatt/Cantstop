@@ -66,8 +66,8 @@ class Game(discord.ui.View):
                 except discord.errors.Forbidden:
                     pass
             await interaction.followup.send(embed = discord.Embed(title = ':trophy: Результаты', description = await self.leaderboard(), colour = discord.Colour.blue()))
+            self.stop() 
             self.g_list.delete(self)
-            self.stop()
         else:
             await interaction.response.send_message('Только ведущий может запустить игру', ephemeral = True)
 
