@@ -26,9 +26,9 @@ class Game(discord.ui.View):
     @discord.ui.button(label = 'Присоединиться к игре', style = discord.ButtonStyle.green)
     async def add_player(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user in list(self.players.keys()):
-            await interaction.response.send_message('Вы уже участвуете в данной игре', ephemeral=True)
+            await interaction.response.send_message('Вы уже участвуете в данной игре', ephemeral = True)
         elif self.g_list.check_user(interaction.user):
-            await interaction.response.send_message('Вы уже присоединились к другой игре', ephemeral=True)
+            await interaction.response.send_message('Вы уже присоединились к другой игре', ephemeral = True)
         else:
             self.players[interaction.user] = list()
             await self.update(interaction.response)
@@ -36,12 +36,12 @@ class Game(discord.ui.View):
     @discord.ui.button(label = 'Покинуть игру', style = discord.ButtonStyle.red)
     async def delete_player(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user == self.host:
-            await interaction.response.send_message('Ведущий не может покинуть игру', ephemeral=True)
+            await interaction.response.send_message('Ведущий не может покинуть игру', ephemeral = True)
         elif interaction.user in list(self.players.keys())[1:]:
             self.players.pop(interaction.user)
             await self.update(interaction.response)
         else:
-            await interaction.response.send_message('Вы не присоединялись к игре', ephemeral=True)
+            await interaction.response.send_message('Вы не присоединялись к игре', ephemeral = True)
     
     @discord.ui.button(label = 'Начать игру', style = discord.ButtonStyle.blurple, emoji = discord.PartialEmoji.from_str('<:icons_customstaff:1009175726810988714'))
     async def start(self, interaction: discord.Interaction, button: discord.Button):
@@ -69,7 +69,7 @@ class Game(discord.ui.View):
             self.g_list.delete(self)
             self.stop()
         else:
-            await interaction.response.send_message('Только ведущий может запустить игру', ephemeral=True)
+            await interaction.response.send_message('Только ведущий может запустить игру', ephemeral = True)
 
     @discord.ui.button(label = 'Отменить игру', style = discord.ButtonStyle.grey, emoji = discord.PartialEmoji.from_str('<:icons_customstaff:1009175726810988714'))
     async def cancel(self, interaction: discord.Interaction, button: discord.Button):
@@ -77,11 +77,11 @@ class Game(discord.ui.View):
             view = discord.ui.View()
             view.add_item(discord.ui.Button(label = 'Игра отменена', style = discord.ButtonStyle.grey, disabled = True))
             await interaction.message.edit(view = view)
-            await interaction.response.send_message('Игра отменена', ephemeral=True)
+            await interaction.response.send_message('Игра отменена', ephemeral = True)
             self.stop()
             self.g_list.delete(self)
         else:
-            await interaction.response.send_message('Только ведущий может отменить игру', ephemeral=True)
+            await interaction.response.send_message('Только ведущий может отменить игру', ephemeral = True)
 
     @discord.ui.button(label = 'Поменять буквы', style = discord.ButtonStyle.grey, emoji = discord.PartialEmoji.from_str('<:icons_customstaff:1009175726810988714'))
     async def change_letters(self, interaction: discord.Interaction, button: discord.Button):
@@ -89,7 +89,7 @@ class Game(discord.ui.View):
             self.letters = generate_letters()
             await self.update(interaction.response)
         else:
-            await interaction.response.send_message('Только ведущий может поменять буквы', ephemeral=True)
+            await interaction.response.send_message('Только ведущий может поменять буквы', ephemeral = True)
             
     async def leaderboard(self):
         leaderboard = ''
@@ -107,7 +107,7 @@ class Game(discord.ui.View):
     async def timer(self):
         for player in self.players:
             try:
-                await player.send(embed = discord.Embed(description = f'Минут до окончания игры: {2 - self.timer.current_loop}', colour = discord.Colour.red()))
+                await player.send(embed = discord.Embed(description = f':timer: Минут до окончания игры: {2 - self.timer.current_loop}', colour = discord.Colour.red()))
             except discord.errors.Forbidden:
                 pass
     
