@@ -14,7 +14,7 @@ def generate_letters(distribution: dict = LETTER_PROBABILITY_DISTRIBUTION) -> li
 
 def check_word(letters: list, word: str, dictionary: set = DICTIONARY) -> bool:
     if (
-        all([letters.count(l) <= word.lower().count(l) for l in letters])
+        all(letters.count(l) <= word.lower().count(l) for l in letters)
         and word.lower() in DICTIONARY
     ):
         return True
@@ -89,7 +89,7 @@ class Game(discord.ui.View):
                 try:
                     await player.send(
                         embed=discord.Embed(
-                            description=f'Вы должны составить как можно больше слов с буквами **{"**, **".join(self.letters)}** за три минуты',
+                            description=f"Вы должны составить как можно больше слов с буквами **{"**, **".join(self.letters)}** за три минуты",
                             colour=discord.Colour.blue(),
                         )
                     )
@@ -177,7 +177,7 @@ class Game(discord.ui.View):
         return leaderboard
 
     async def update(self, response: discord.InteractionResponse):
-        content = f'Игроки должны будут составить в личных сообщениях бота как можно больше слов с буквами **{"**, **".join(self.letters)}** за три минуты. Начать игру может только ведущий, нажав на соответствующую кнопку\n\n**Игроки**:\n<:icons_customstaff:1009175726810988714> {self.host.mention}'
+        content = f"Игроки должны будут составить в личных сообщениях бота как можно больше слов с буквами **{"**, **".join(self.letters)}** за три минуты. Начать игру может только ведущий, нажав на соответствующую кнопку\n\n**Игроки**:\n<:icons_customstaff:1009175726810988714> {self.host.mention}"
         if len(self.players) > 1:
             content += (
                 "\n<:icons_Person:1009175664156487810>"
@@ -250,7 +250,7 @@ class GameCog(commands.Cog):
             await ctx.send(
                 embed=discord.Embed(
                     title=":abc: Буквица",
-                    description=f'Игроки должны будут составить в личных сообщениях бота как можно больше слов c буквами **{"**, **".join(game.letters)}** за три минуты. Начать игру может только ведущий, нажав на соответствующую кнопку\n\n**Игроки**:\n<:icons_customstaff:1009175726810988714> {ctx.author.mention}',
+                    description=f"Игроки должны будут составить в личных сообщениях бота как можно больше слов c буквами **{"**, **".join(game.letters)}** за три минуты. Начать игру может только ведущий, нажав на соответствующую кнопку\n\n**Игроки**:\n<:icons_customstaff:1009175726810988714> {ctx.author.mention}",
                     colour=discord.Colour.blue(),
                 ),
                 view=game,
