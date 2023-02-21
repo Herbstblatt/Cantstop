@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 import discord
 from discord import app_commands
 from discord.ext import commands
 
+from .invite import Room, RoomState
+
 from .game import Game, load_games
 
 if TYPE_CHECKING:
-    from .bot import Bot
+    from .bot import Bot, Context
 
 
 class GameTransformer(app_commands.Transformer):
@@ -27,7 +31,7 @@ class GameTransformer(app_commands.Transformer):
         return self.games[value]
 
     @classmethod
-    async def convert(cls, ctx: commands.Context, arg: str):
+    async def convert(cls, ctx: Context, arg: str):
         return ctx.bot.games[arg]
     
 
@@ -36,11 +40,11 @@ class Commands(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_group()
-    async def game(self, ctx: commands.Context) -> None:
+    async def game(self, ctx: Context) -> None:
         pass
 
     @game.command()
-    async def list(self, ctx: commands.Context) -> None:
+    async def list(self, ctx: Context) -> None:
         """Показывает список поддерживаемых игр
         """
         em = discord.Embed(
@@ -55,7 +59,7 @@ class Commands(commands.Cog):
         await ctx.send(embed=em)
 
     @game.command()
-    async def info(self, ctx: commands.Context, game: app_commands.Transform[Game, GameTransformer]):
+    async def info(self, ctx: Context, game: app_commands.Transform[Game, GameTransformer]):
         """Показывает информацию о конкретной игре
         
         Аргументы:
@@ -72,6 +76,31 @@ class Commands(commands.Cog):
             inline=True
         )
         await ctx.send(embed=em)
+
+    @commands.hybrid_group()
+    async def room(self, _):
+        pass
+
+    @room.command()
+    @commands.guild_only()
+    async def create(self, ctx: Context, game: app_commands.Transform[Game, GameTransformer]):
+        """Создаёт новую комнату
+
+        Аргументы:
+            game: Название игры
+        """
+        if self.bot.rooms.check_user(ctx.author):  # type: ignore
+            await ctx.send("Вы уже участвуете в другой игре.", ephemeral=True)
+            return
+            
+        room = await Room.create(ctx, game)
+        self.bot.rooms.add(room)
+        await room.wait()
+
+        if room.state == RoomState.game_in_progress:
+            await game.start(room)
+        else:
+            self.bot.rooms.delete(room)
     
 
 async def setup(bot: "Bot") -> None:

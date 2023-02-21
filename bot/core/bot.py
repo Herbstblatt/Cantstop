@@ -4,21 +4,26 @@ from typing import Any
 from discord.ext import commands
 import discord
 
+from bot.core.invite import RoomManager
+
 from .game import load_games
 
 class Bot(commands.Bot):
     def __init__(self, **kwargs: dict[str, Any]):
         super().__init__(
-            command_prefix=commands.when_mentioned_or('$'), 
+            command_prefix=commands.when_mentioned_or('-'), 
             intents=discord.Intents.default(),  
             **kwargs
         )
 
         self.games = load_games()
+        self.rooms = RoomManager()
 
     async def setup_hook(self) -> None:
         await self.load_extension("jishaku")
         await self.load_extension("bot.core.cog")
+        for game in self.games:
+            await self.load_extension(f"bot.games.{game}")
         
     async def on_ready(self):
         print(f'Logged on as {self.user}')

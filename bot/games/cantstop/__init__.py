@@ -1,10 +1,11 @@
-from typing import List
-import discord
+from bot.core.invite import Room
 from .game import Game
 
-async def start(
-    interaction: discord.Interaction, 
-    participants: List[discord.Member]
-):
-    view = Game(players=participants)
-    await interaction.followup.send(content=view.content, view=view)
+
+async def setup(_):
+    pass
+
+async def start(room: Room):
+    assert room.view is not None and room.view.active_interaction is not None
+    view = Game(players=room.participants)
+    await room.view.active_interaction.followup.send(content=view.content, view=view)

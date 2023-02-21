@@ -3,3 +3,6 @@ class GameException(Exception):
 
 class RoomFilled(Exception):
     pass
+
+class AlreadyParticipating(Exception):
+    pass
