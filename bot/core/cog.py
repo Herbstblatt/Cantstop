@@ -54,7 +54,8 @@ class Commands(commands.Cog):
         for game in self.bot.games.values():
             em.add_field(
                 name=game.name,
-                value=f"**Описание**: {game.description}\n**Количество участников**: {game.min_players}—{game.max_players}"
+                value=f"**Описание**: {game.description}\n**Количество участников**: {game.min_players}—{game.max_players}",
+                inline=False
             )
         await ctx.send(embed=em)
 
