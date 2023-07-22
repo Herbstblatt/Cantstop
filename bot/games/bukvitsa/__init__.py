@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 
-from bot.core.game import load_games
 from bot.core.invite import Room
 from .game import Game, GameCog
 
