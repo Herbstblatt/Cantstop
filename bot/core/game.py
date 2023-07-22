@@ -21,7 +21,7 @@ class Game:
 
     @classmethod
     def from_dir(cls, name: str):
-        with open(os.path.join("bot/games", name, "metadata.yml"), encoding='utf-8') as f:
+        with open(os.path.join("bot/games", name, "metadata.yml")) as f:
             data = yaml.safe_load(f)
         
         module = importlib.import_module(f"bot.games.{name}")
