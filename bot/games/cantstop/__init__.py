@@ -2,8 +2,9 @@ from bot.core.game import load_games
 from bot.core.invite import Room
 from .game import Game
 
-async def setup(bot):
-	pass
+
+async def setup(_):
+    pass
 
 async def start(room: Room):
     assert room.view is not None and room.view.active_interaction is not None
