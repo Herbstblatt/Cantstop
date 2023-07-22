@@ -9,8 +9,8 @@ from .game import Game, GameCog
 if TYPE_CHECKING:
     from bot.core.bot import Bot
 
-async def setup(bot):
-	await bot.add_cog(GameCog(bot))
+async def setup(bot: "Bot"):
+    await bot.add_cog(GameCog(bot))
 
 async def start(room: Room):
     assert room.view is not None and room.view.active_interaction is not None
