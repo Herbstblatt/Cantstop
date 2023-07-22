@@ -142,9 +142,9 @@ class RoomView(ui.View):
 
         for player in self.room.participants:
             if player == self.room.host:
-                description += "\n<:host:1124630741100265542>"
+                description += "\n<:host:1009182501325000887>"
             else:
-                description += "\n<:user:1124630754333298698>"
+                description += "\n<:user:966009692117667882>"
 
             description += f" {player.mention}"
 
@@ -161,9 +161,9 @@ class RoomView(ui.View):
         try:
             await self.room.add_participant(interaction.user)
         except RoomFilled:
-            await interaction.response.send_message("<:error:1124631869615525928> Эта комната уже наполнена.", ephemeral=True)
+            await interaction.response.send_message("<:error:1001451516969877504> Эта комната уже наполнена.", ephemeral=True)
         except AlreadyParticipating:
-            await interaction.response.send_message("<:error:1124631869615525928> Вы уже участвуете в другой игре.", ephemeral=True)
+            await interaction.response.send_message("<:error:1001451516969877504> Вы уже участвуете в другой игре.", ephemeral=True)
         else:
             await interaction.response.edit_message(embed=self.render())
 
