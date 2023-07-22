@@ -36,5 +36,5 @@ LETTER_PROBABILITY_DISTRIBUTION = {
     'я': 4
 }
 
-with open('bot/games/bukvitsa/dictionary.json', encoding='utf-8') as r:
+with open('bot/games/bukvitsa/dictionary.json') as r:
     DICTIONARY = set(json.load(r))
