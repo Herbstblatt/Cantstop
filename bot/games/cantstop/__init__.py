@@ -1,4 +1,3 @@
-from bot.core.game import load_games
 from bot.core.invite import Room
 from .game import Game
 
