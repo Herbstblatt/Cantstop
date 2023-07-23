@@ -60,8 +60,15 @@
 	"Голландская империя": "Голландия",
 	"Мексиканская империя": "Мексика", 
 	"Бразильская империя": "Бразилия", 
+	"Македонская империя": "Македония",
+	"Королевство Италия": "Италия",
+	"Королевство Финляндия": "Финляндия",
+	"Королевство Хорватия": "Хорватия",
+	"Королевство Египет": "Египет",
 	"Великая Колумбия": "Колумбия",
-	"Нижняя Канада": "Канада"
+	"Нижняя Канада": "Канада",
+	"ГДР": "Германия",
+	"ТНР": "Тува"
   },
   "flags": {
     "Австралия": "Australia", 
@@ -189,7 +196,7 @@
     "Оман": "Oman",
     "Пакистан": "Pakistan",
     "Палау": "Palau",
-	"Палестина": "Palestine",
+    "Палестина": "Palestine",
     "Панама": "Panama",
     "Папуа-Новая Гвинея": "Papua New Guinea",
     "Парагвай": "Paraguay",
@@ -296,13 +303,17 @@
 	"Тевтонский орден": "Bezen Perrot flag",
 	"Македонская империя": "Flag of Greek Macedonia",
 	"Империя Ахеменидов": "Standard of Cyrus the Great",
-	"Королевство Италия": "Flag of Italy (1861-1946) crowned",
 	"Папская область": "Flag of the Papal States (1825-1870)",
 	"Чехословакия": "Flag of the Czech Republic",
+	"Королевство Италия": "Flag of Italy (1861-1946) crowned",
+	"Королевство Финляндия": "Flag of Finland 1918-1920 (State)",
+	"Королевство Хорватия": "Flag_of_the_Kingdom_of_Croatia_(925)",
+	"Королевство Египет": "Flag of Egypt (1922–1953)",
 	"РСФСР": "Flag of the Russian Soviet Federative Socialist Republic (1954–1991)",
 	"БССР": "Flag of the Byelorussian Soviet Socialist Republic (1951–1991)",
 	"УССР": "Flag of the Ukrainian Soviet Socialist Republic",
-	"ТНР": "Flag of the Tuvan People's Republic (1935-1939)"
+	"ТНР": "Flag of the Tuvan People's Republic (1935-1939)",
+	"ГДР": "Flag of East Germany"
   },
   "capitals": {
     "Нидерланды": "Амстердам",
