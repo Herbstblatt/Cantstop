@@ -2,6 +2,7 @@ import discord
 from random import choice
 from collections import Counter
 from discord import ButtonStyle
+from bot.core.invite import RoomState
 roles = {
 	'mafia': ('мафия', 'мафией', 'принятия решений', 'убить', ':spy:'),
 	'comissar': ('комиссар', 'комиссаром', 'проверки игроков', 'проверить', ':man_police_officer:'),
@@ -96,7 +97,9 @@ class InviteMember(discord.ui.View):
 	@discord.ui.button(label='Согласиться', style=ButtonStyle.green)
 	async def accept(self, interaction, button):
 		if interaction.user.id == self.member.id:
-			if self.member in self.room.participants:
+			if self.room.state != RoomState.waiting:
+				await interaction.response.send_message('Данная игра уже начата или отменена.', ephemeral=True)
+			elif self.member in self.room.participants:
 				await interaction.response.send_message('Вы уже находитесь в данной комнате.', ephemeral=True)
 			elif self.room.manager.check_user(self.member):
 				await interaction.response.send_message('Вы уже находитесь в другой комнате.', ephemeral=True)
@@ -122,7 +125,7 @@ class InviteMember(discord.ui.View):
 				else:
 					self.room.declined.append(self.member.id)
 				self.clear_items()
-				self.add_item(discord.ui.Button(label='Отказано', style=ButtonStyle.red, disabled=True))
+				self.add_item(discord.ui.Button(label='Отклонено', style=ButtonStyle.red, disabled=True))
 				await interaction.response.edit_message(view=self)
 		else:
 			await interaction.response.send_message('Вы не участвуете в данном приглашении.', ephemeral=True)
