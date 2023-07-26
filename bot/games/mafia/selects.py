@@ -1,22 +1,19 @@
 from discord import ui, ButtonStyle, SelectOption
-from .game import roles, values, summarize, InviteMember, SelectNames, SelectRoles, SelectTimes, SelectYesNo
+from .game import roles, values, summarize, InviteMember, SelectNames, SelectRoles, SelectTimes
 get_name = lambda user: user.global_name if user.global_name else user.name
+roles_list = {
+	'standard': lambda role: values['roles_list'][role][0].lower(),
+	'russia': lambda role: values['roles_list'][role][1]
+}
 
-def roles_list(settings):
-	if settings['roles_name'] == 'russia':
-		return lambda role: values['roles_list'][role][1]
-	else:
-		return lambda role: values['roles_list'][role][0].lower()
-
-class OpenSettings:
+class OpenSettings(ui.Button):
 	def __init__(self, room):
-		self.room = room
-		self.button = ui.Button(
+		super().__init__(
 			label='Открыть настройки',
 			style=ButtonStyle.grey,
 			emoji='<:host:1009182501325000887>',
 		)
-		self.button.callback = self.callback
+		self.room = room
 
 	async def callback(self, interaction):
 		if interaction.user.id == self.room.host.id:
@@ -37,12 +34,38 @@ class OpenSettings:
 		else:
 			await interaction.response.send_message('Только ведущий может настраивать игру', ephemeral=True)
 
+class SelectYesNo(ui.Button):
+	def __init__(self, room, mode=None):
+		super().__init__(
+			label=values['yes_no'][room.settings['draw_lots' if mode == 'draw_lots' else 'natural_death']].capitalize(), 
+			style=ButtonStyle.green if room.settings['draw_lots' if mode == 'draw_lots' else 'natural_death'] == 'yes' else ButtonStyle.red
+		)
+		self.room = room
+		self.mode = mode
+		self.views = ui.View()
+		self.views.add_item(self)
+
+	async def callback(self, interaction):
+		mode = 'draw_lots' if self.mode == 'draw_lots' else 'natural_death'
+		if interaction.user.id == self.room.host.id and self.room.settings[mode] == 'yes':
+			self.room.settings[mode] = 'no'
+			self.button.label = 'Нет'
+			self.button.style = ButtonStyle.red
+			await interaction.response.edit_message(view=self)
+		elif interaction.user.id == self.room.host.id and self.room.settings[mode] == 'no':
+			self.room.settings[mode] = 'yes'
+			self.button.label = 'Да'
+			self.button.style = ButtonStyle.green
+			await interaction.response.edit_message(view=self)
+		else:
+			await interaction.response.send_message('Только ведущий может настраивать игру', ephemeral=True)
+
 class SelectOptions(ui.Select):
 	def __init__(self, room):
 		self.room = room
 		options = (
 			SelectOption(label='Названия ролей', description='Текущее значение: ' + values['roles_name'][room.settings['roles_name']], value='roles_name'),
-			SelectOption(label='Список ролей', description='Текущее значение: ' + ', '.join(map(roles_list(room.settings), room.settings['roles'])), value='roles_list'),
+			SelectOption(label='Список ролей', description='Текущее значение: ' + ', '.join(map(roles_list[room.settings['roles_name']], room.settings['roles'])), value='roles_list'),
 			SelectOption(label='Время на раздумие ролям (кроме путаны)', description='Текущее значение: ' + values['roles_time'][room.settings['roles_time']], value='roles_time'),
 			SelectOption(label='Время на раздумие путане', description='Текущее значение: ' + values['roles_time'][room.settings['putana_time']], value='putana_time'),
 			SelectOption(label='Могут ли умирать игроки, если мафия никого не убила?', description='Текущее значение: ' + values['yes_no'][room.settings['natural_death']], value='natural_death'),
@@ -73,13 +96,13 @@ class SelectOptions(ui.Select):
 				self.room.settings['views'].append(view)
 				await interaction.response.send_message('Время на раздумие путане:', view=view)
 			elif self.values[0] == 'natural_death':
-				view = SelectYesNo(self.room)
-				self.room.settings['views'].append(view)
-				await interaction.response.send_message('Могут ли умирать игроки, если мафия никого не убила?', view=view)
+				button = SelectYesNo(self.room)
+				self.room.settings['views'].append(button.views)
+				await interaction.response.send_message('Могут ли умирать игроки, если мафия никого не убила?', view=button.views)
 			elif self.values[0] == 'draw_lots':
-				view = SelectYesNo(self.room, 'draw_lots')
-				self.room.settings['views'].append(view)
-				await interaction.response.send_message('Могут ли игроки вытянуть жребий, если не определились, кого убить?', view=view)
+				button = SelectYesNo(self.room, 'draw_lots')
+				self.room.settings['views'].append(button.views)
+				await interaction.response.send_message('Могут ли игроки вытянуть жребий, если не определились, кого убить?', view=button.views)
 		else:
 			await interaction.response.send_message('Только ведущий может настраивать игру', ephemeral=True)
 
