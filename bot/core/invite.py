@@ -46,7 +46,7 @@ class Room:
 
         if game.name == 'Мафия':
             mafia = importlib.import_module('bot.games.mafia.selects')
-            room.view.add_item(mafia.OpenSettings(room).button)
+            room.view.add_item(mafia.OpenSettings(room))
 
         msg = await context.send(
             view=room.view,
