@@ -49,8 +49,8 @@ async def summarize(mafia):
 			await channel.send('Видимо, мирным жителям неинтересна инициатива голосования и выживания.')
 		elif len(kill_list) > 1:
 			if mafia['room'].settings['draw_lots'] == 'yes':
-				await channel.send(f'Мирные жители разошлись в мнении между <@{">, <@".join(map(str, kill_list))}>. Было принято решение вытянуть жребий.')
 				kill_vote = choice(kill_list)
+				await channel.send(f'Мирные жители разошлись в мнении между <@{">, <@".join(map(str, kill_list))}>. Было принято решение вытянуть жребий.')
 				await channel.send(f'Короткий жребий достался <@{kill_vote}>. Увы, но для него это конец.')
 			else:
 				await channel.send(f'Мирные жители разошлись в мнении между <@{">, <@".join(map(str, kill_list))}>. Было принято решение отложить голосование до следующего дня.')
@@ -120,7 +120,7 @@ class InviteMember(discord.ui.View):
 				if not getattr(self.room, 'declined', None):
 					self.room.declined = [self.member.id]
 				else:
-					self.room.append(self.member.id)
+					self.room.declined.append(self.member.id)
 				self.clear_items()
 				self.add_item(discord.ui.Button(label='Отказано', style=ButtonStyle.red, disabled=True))
 				await interaction.response.edit_message(view=self)
@@ -211,33 +211,6 @@ class SelectTimes(discord.ui.View):
 		if interaction.user.id == self.room.host.id:
 			self.room.settings['putana_time' if self.mode == 'putana' else 'roles_time'] = int(select.values[0])
 			self.button.label = values['roles_time'][int(select.values[0])]
-			await interaction.response.edit_message(view=self)
-		else:
-			await interaction.response.send_message('Только ведущий может настраивать игру', ephemeral=True)
-
-class SelectYesNo(discord.ui.View):
-	def __init__(self, room, mode=None):
-		super().__init__()
-		self.room = room
-		self.mode = mode
-		self.button = discord.ui.Button(
-			label=values['yes_no'][room.settings['draw_lots' if mode == 'draw_lots' else 'natural_death']].capitalize(), 
-			style=ButtonStyle.green if room.settings['draw_lots' if mode == 'draw_lots' else 'natural_death'] == 'yes' else ButtonStyle.red
-		)
-		self.button.callback = self.select_yes_no
-		self.add_item(self.button)
-	
-	async def select_yes_no(self, interaction):
-		mode = 'draw_lots' if self.mode == 'draw_lots' else 'natural_death'
-		if interaction.user.id == self.room.host.id and self.room.settings[mode] == 'yes':
-			self.room.settings[mode] = 'no'
-			self.button.label = 'Нет'
-			self.button.style = ButtonStyle.red
-			await interaction.response.edit_message(view=self)
-		elif interaction.user.id == self.room.host.id and self.room.settings[mode] == 'no':
-			self.room.settings[mode] = 'yes'
-			self.button.label = 'Да'
-			self.button.style = ButtonStyle.green
 			await interaction.response.edit_message(view=self)
 		else:
 			await interaction.response.send_message('Только ведущий может настраивать игру', ephemeral=True)
