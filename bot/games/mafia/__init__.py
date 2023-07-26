@@ -12,14 +12,14 @@ get_putana = lambda id: {v:k for k,v in mafia[id]['roles'].items()}.get('putana'
 def voting(id):
 	del mafia[id]
 
-async def wait(view, channel):
+async def wait(view, channel_id):
+	id = mafia[channel_id]['id']
 	await asyncio.sleep(120)
 	view.stop()
-	id = mafia.get(channel.id, {'id': 0})['id']
-	if mafia.get(channel.id) and id == mafia[channel.id]['id'] and not mafia[channel.id]['early_vote']:
-		await summarize(mafia[channel.id])
-		if mafia[channel.id]['time'] == 'end':
-			del mafia[channel.id]
+	if mafia.get(channel_id) and id == mafia[channel_id]['id'] and not mafia[channel_id]['early_vote']:
+		await summarize(mafia[channel_id])
+		if mafia[channel_id]['time'] == 'end':
+			del mafia[channel_id]
 
 async def send_dm(role, view, channel):
 	params = mafia[channel.id]
@@ -49,19 +49,6 @@ async def setup(bot):
 					await ctx.send(f'{ctx.author.global_name} приглашает игрока {member.mention} в игру {room.game.emoji} {room.game.name}.', view=InviteMember(room, member))
 				return
 		await ctx.send('Вы не являетесь ведущим ни в одной из комнат в данном канале.')
-
-	@bot.command()
-	async def leave(ctx):
-		for room in bot.rooms:
-			if room.state == RoomState.waiting and ctx.author in room.participants and room.view.message.channel.id == ctx.channel.id:
-				if ctx.author not in room.participants:
-					await ctx.send('Вы не находитесь в данной комнате.')
-				else:
-					await roomremove_participant(ctx.author)
-					await room.view.message.edit(embed=room.view.render())
-					await ctx.send(f'Вы покинули игру {room.game.emoji} {room.game.name}.')
-				return
-		await ctx.send('Вы не находитесь ни в одной из комнат в данном канале.')
 
 async def start(room):
 	if not getattr(room, 'settings', None):
@@ -260,5 +247,5 @@ async def start(room):
 				view.add_item(SelectPlayer(mafia[channel.id], voting))
 				await channel.send('Как бы то ни было, у жителей есть 2 минуты, чтобы найти преступников и убить их. Выберите игрока, за убийство которого хотите проголосовать:', view=view)
 				mafia[channel.id]['time'] = 'vote'
-				asyncio.get_event_loop().create_task(wait(view, channel))
+				asyncio.get_event_loop().create_task(wait(view, channel.id))
 			await asyncio.sleep(2)
