@@ -49,14 +49,14 @@ class SelectYesNo(ui.Button):
 		mode = 'draw_lots' if self.mode == 'draw_lots' else 'natural_death'
 		if interaction.user.id == self.room.host.id and self.room.settings[mode] == 'yes':
 			self.room.settings[mode] = 'no'
-			self.button.label = 'Нет'
-			self.button.style = ButtonStyle.red
-			await interaction.response.edit_message(view=self)
+			self.label = 'Нет'
+			self.style = ButtonStyle.red
+			await interaction.response.edit_message(view=self.view)
 		elif interaction.user.id == self.room.host.id and self.room.settings[mode] == 'no':
 			self.room.settings[mode] = 'yes'
-			self.button.label = 'Да'
-			self.button.style = ButtonStyle.green
-			await interaction.response.edit_message(view=self)
+			self.label = 'Да'
+			self.style = ButtonStyle.green
+			await interaction.response.edit_message(view=self.view)
 		else:
 			await interaction.response.send_message('Только ведущий может настраивать игру', ephemeral=True)
 
