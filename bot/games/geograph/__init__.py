@@ -1,6 +1,7 @@
-from .game import Games
+from .game import add_stop, Games
 
 async def setup(bot):
+	add_stop(bot)
 	await bot.add_cog(Games())
 
 async def start(room):
