@@ -2,29 +2,52 @@ import discord
 import asyncio
 import json
 import requests
-from discord.ext import commands
 from random import choice, randint
 from bot.core.invite import RoomState
+from discord import app_commands, Interaction, Embed
+from discord.ext.commands import command, Context, Cog
 games = {}
 last_id = {}
 with open('bot/games/geograph/data.json', encoding='utf-8') as f:
 	data = json.load(f)
 data['continents']['old']['Мир'] = [i for sub in data['continents']['old'].values() for i in sub]
 data['continents']['general']['Мир'] = [i for sub in data['continents']['general'].values() for i in sub]
+get_name = lambda user: user.global_name if user.global_name else user.name
+games_name = {
+	'flags': 'Флаги', 
+	'maps': 'Карты', 
+	'capitals': 'Столицы', 
+	'old': 'Флаги бывших стран', 
+	'pst_capitals': 'Столицы субъектов постсоветских стран'
+}
+
+def add_stop(bot):
+	cog = bot.get_cog('Commands')
+	@cog.game.command(brief='Останавливает игру (география)')
+	async def stop(ctx):
+		if ctx.channel.id in games:
+			await ctx.send('Игра закончена.')
+			del games[ctx.channel.id]
+		else:
+			await ctx.send('В данном канале не запущена игра.')
 
 async def create_room(game, ctx):
+	if isinstance(ctx, Interaction):
+		ctx = await Context.from_interaction(ctx)
 	cog = ctx.bot.get_cog('Commands')
 	await cog.create.callback(cog, ctx, ctx.bot.games[game])
 
 async def start_game(game, ctx, rounds, continent):
+	if isinstance(ctx, Interaction):
+		ctx = await Context.from_interaction(ctx)
 	# Проверка канала игры
-	if games.get(ctx.channel.id):
+	if ctx.channel.id in games:
 		await ctx.send('В данном канале уже запущена игра. Дождитесь её окончания или запустите игру в другом канале.')
 	# Проверка континента
 	elif continent.title() not in data['continents']['general']:
 		await ctx.send('Данного континента не существует. Доступные континенты: Мир, Азия, Африка, Европа, Океания, Северная Америка, Южная Америка.')
 	# Проверка числа раундов
-	elif not rounds.isdigit():
+	elif not str(rounds).isdigit():
 		await ctx.send('Число раундов должно быть целым числом.')
 	elif int(rounds) < 1:
 		await ctx.send('Число раундов не может быть меньше 1.')
@@ -41,31 +64,34 @@ async def start_game(game, ctx, rounds, continent):
 		last_id[ctx.channel.id] = games[ctx.channel.id]['id']
 		while not games[ctx.channel.id]['actived'] and games[ctx.channel.id]['count'] < games[ctx.channel.id]['max_count']:
 			if game == 'flags':
-				right = await flags(ctx.channel)
+				right = await flags(ctx)
 			if game == 'old':
-				right = await old(ctx.channel)
+				right = await old(ctx)
 			if game == 'maps':
-				right = await maps(ctx.channel)
+				right = await maps(ctx)
 			if game == 'capitals':
-				right = await capitals(ctx.channel)
+				right = await capitals(ctx)
 			if game == 'pst_capitals':
-				right = await pst_capitals(ctx.channel)
+				right = await pst_capitals(ctx)
 			if right: break
 		else:
-			if games[ctx.channel.id]['count'] >= games[ctx.channel.id]['max_count']:
-				leaders = [f'**{ctx.guild.get_member(k).global_name}** ({v})' for k,v in games[ctx.channel.id]['leaders'].items()]
-				await ctx.channel.send(f"Игра закончена. Статистика: {', '.join(leaders)}.")
-				del games[ctx.channel.id]
+			if games[interaction.channel.id]['count'] >= games[interaction.channel.id]['max_count'] and games[interaction.channel.id]['leaders']:
+				leaders = [f'**{get_name(interaction.guild.get_member(k))}** ({v})' for k,v in games[interaction.channel.id]['leaders'].items()]
+				await interaction.channel.send(f"Игра закончена. Статистика: {', '.join(leaders)}.")
+				del games[interaction.channel.id]
+			elif games[interaction.channel.id]['count'] >= games[interaction.channel.id]['max_count']:
+				await interaction.channel.send('Игра закончена.')
 
-async def flags(channel):
-	id = games[channel.id]['id']
+async def flags(ctx):
+	channel = ctx.channel if isinstance(ctx, Context) else ctx
 	country = choice(list(set(data['continents']['general'][games[channel.id]['continent']]).difference(games[channel.id]['answered'])))
+	id = games[channel.id]['id']
 	games[channel.id]['answer'] = country
 	games[channel.id]['count'] += 1
 	flag_pic = requests.get(f"https://commons.wikimedia.org/w/api.php?action=query&titles=File:Flag_of_{data['flags'][country]}.svg&prop=imageinfo&iiprop=url&format=json").json()
-	embed = discord.Embed(title=f"Флаги: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description='Назвите страну, имеющую данный флаг', color=0x0086ff)
+	embed = Embed(title=f"Флаги: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description='Назвите страну, имеющую данный флаг', color=0x0086ff)
 	embed.set_image(url=flag_pic['query']['pages'][list(flag_pic['query']['pages'])[0]]['imageinfo'][0]['url'].replace('commons', 'commons/thumb') + f"/200px-Flag_of_{data['flags'][country].replace(' ', '_')}.svg.png")
-	await channel.send(embed=embed)
+	await ctx.send(embed=embed)
 	await asyncio.sleep(15)
 	if id == games.get(channel.id, {'id': 0})['id'] and country not in games[channel.id]['answered']:
 		games[channel.id]['answered'].append(country)
@@ -73,15 +99,16 @@ async def flags(channel):
 		return False
 	return True
 
-async def old(channel):
-	id = games[channel.id]['id']
+async def old(ctx):
+	channel = ctx.channel if isinstance(ctx, Context) else ctx
 	country = choice(list(set(data['continents']['old'][games[channel.id]['continent']]).difference(games[channel.id]['answered'])))
+	id = games[channel.id]['id']
 	games[channel.id]['answer'] = country
 	games[channel.id]['count'] += 1
 	flag_pic = requests.get(f"https://commons.wikimedia.org/w/api.php?action=query&titles=File:{data['old'][country]}{'.png' if country == 'Монгольская империя' else '.svg'}&prop=imageinfo&iiprop=url&format=json").json()
-	embed = discord.Embed(title=f"Флаги бывших стран: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description='Назвите страну, имеющую данный флаг', color=0x0086ff)
+	embed = Embed(title=f"Флаги бывших стран: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description='Назвите страну, имеющую данный флаг', color=0x0086ff)
 	embed.set_image(url=flag_pic['query']['pages'][list(flag_pic['query']['pages'])[0]]['imageinfo'][0]['url'].replace('commons', 'commons/thumb') + f"/200px-{data['old'][country].replace(' ', '_')}{'' if country == 'Монгольская империя' else '.svg'}.png")
-	await channel.send(embed=embed)
+	await ctx.send(embed=embed)
 	await asyncio.sleep(15)
 	if id == games.get(channel.id, {'id': 0})['id'] and country not in games[channel.id]['answered']:
 		games[channel.id]['answered'].append(country)
@@ -89,14 +116,15 @@ async def old(channel):
 		return False
 	return True
 
-async def maps(channel):
-	id = games[channel.id]['id']
+async def maps(ctx):
+	channel = ctx.channel if isinstance(ctx, Context) else ctx
 	country = choice(list(set(data['continents']['general'][games[channel.id]['continent']]).intersection(data['maps']).difference(games[channel.id]['answered'])))
+	id = games[channel.id]['id']
 	games[channel.id]['answer'] = country
 	games[channel.id]['count'] += 1
-	embed = discord.Embed(title=f"Карты: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description='Назвите страну, указанную на карте', color=0x0086ff)
+	embed = Embed(title=f"Карты: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description='Назвите страну, указанную на карте', color=0x0086ff)
 	embed.set_image(url=f"https://cdn.discordapp.com/attachments/1038366862007869492/{data['maps'][country]}.png")
-	await channel.send(embed=embed)
+	await ctx.send(embed=embed)
 	await asyncio.sleep(15)
 	if id == games.get(channel.id, {'id': 0})['id'] and country not in games[channel.id]['answered']:
 		games[channel.id]['answered'].append(country)
@@ -104,14 +132,15 @@ async def maps(channel):
 		return False
 	return True
 
-async def capitals(channel):
-	id = games[channel.id]['id']
+async def capitals(ctx):
+	channel = ctx.channel if isinstance(ctx, Context) else ctx
 	country = choice(list(set(data['continents']['general'][games[channel.id]['continent']]).difference(games[channel.id]['answered'])))
+	id = games[channel.id]['id']
 	games[channel.id]['country'] = country
 	games[channel.id]['answer'] = data['capitals'][country]
 	games[channel.id]['count'] += 1
-	embed = discord.Embed(title=f"Столицы: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description=f'Назвите столицу следующей страны: **{country}**', color=0x0086ff)
-	await channel.send(embed=embed)
+	embed = Embed(title=f"Столицы: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description=f'Назвите столицу следующей страны: **{country}**', color=0x0086ff)
+	await ctx.send(embed=embed)
 	await asyncio.sleep(15)
 	if id == games.get(channel.id, {'id': 0})['id'] and country not in games[channel.id]['answered']:
 		games[channel.id]['answered'].append(country)
@@ -119,14 +148,15 @@ async def capitals(channel):
 		return False
 	return True
 
-async def pst_capitals(channel):
-	id = games[channel.id]['id']
+async def pst_capitals(ctx):
+	channel = ctx.channel if isinstance(ctx, Context) else ctx
 	country = choice(list(set(data['pst_capitals']).difference(games[channel.id]['answered'])))
+	id = games[channel.id]['id']
 	games[channel.id]['country'] = country
 	games[channel.id]['answer'] = data['pst_capitals'][country]
 	games[channel.id]['count'] += 1
-	embed = discord.Embed(title=f"Столицы: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description=f'Назвите столицу следующего субъекта постсоветской страны: **{country}**', color=0x0086ff)
-	await channel.send(embed=embed)
+	embed = Embed(title=f"Столицы: {games[channel.id]['count']}/{games[channel.id]['max_count']}", description=f'Назвите столицу следующего субъекта постсоветской страны: **{country}**', color=0x0086ff)
+	await ctx.send(embed=embed)
 	await asyncio.sleep(15)
 	if id == games.get(channel.id, {'id': 0})['id'] and country not in games[channel.id]['answered']:
 		games[channel.id]['answered'].append(country)
@@ -134,8 +164,8 @@ async def pst_capitals(channel):
 		return False
 	return True
 
-class Games(commands.Cog):
-	@commands.Cog.listener()
+class Games(Cog):
+	@Cog.listener()
 	async def on_message(self, message):
 		if message.channel.id in games and all((
 			games[message.channel.id]['answer'] not in games[message.channel.id]['answered'],
@@ -167,20 +197,30 @@ class Games(commands.Cog):
 					return
 				if right: break
 			else:
-				if games[message.channel.id]['count'] >= games[message.channel.id]['max_count']:
-					leaders = [f'**{message.guild.get_member(k).global_name}** ({v})' for k,v in games[message.channel.id]['leaders'].items()]
+				if games[message.channel.id]['count'] >= games[message.channel.id]['max_count'] and games[message.channel.id]['leaders']:
+					leaders = [f'**{get_name(message.guild.get_member(k))}** ({v})' for k,v in games[message.channel.id]['leaders'].items()]
 					await message.channel.send(f"Игра закончена. Статистика: {', '.join(leaders)}.")
 					del games[message.channel.id]
+				elif games[message.channel.id]['count'] >= games[message.channel.id]['max_count']:
+					await message.channel.send('Игра закончена.')
 
-	@commands.command()
+	@command()
 	async def bukvitsa(self, ctx):
 		await create_room('bukvitsa', ctx)
 
-	@commands.command()
+	@app_commands.command(name='bukvitsa')
+	async def bukvitsa_slash(self, interaction):
+		await create_room('bukvitsa', interaction)
+
+	@command()
 	async def cantstop(self, ctx):
 		await create_room('cantstop', ctx)
 
-	@commands.command()
+	@app_commands.command(name='cantstop')
+	async def cantstop_slash(self, interaction):
+		await create_room('cantstop', interaction)
+
+	@command()
 	async def mafia(self, ctx):
 		for room in ctx.bot.rooms:
 			if room.game.name == 'Мафия' and room.state == RoomState.game_in_progress and room.view.message.channel.id == ctx.channel.id:
@@ -188,31 +228,34 @@ class Games(commands.Cog):
 				return
 		await create_room('mafia', ctx)
 
-	@commands.hybrid_group()
-	async def geograph(self, ctx):
-		await ctx.send('Введите команду `-help geograph`, чтобы узнать список доступных игр.')
+	@app_commands.command(name='mafia')
+	async def mafia_slash(self, interaction):
+		ctx = await Context.from_interaction(interaction)
+		for room in ctx.bot.rooms:
+			if room.game.name == 'Мафия' and room.state == RoomState.game_in_progress and room.view.message.channel.id == ctx.channel.id:
+				await ctx.send('В данном канале уже запущена игра. Дождитесь её окончания или запустите игру в другом канале.')
+				return
+		await create_room('mafia', ctx)
 
-	@geograph.command(name='flags', brief='Угадайте страну по флагу')
-	async def flags_cmd(self, ctx, rounds='10', continent='Мир'):
-		await start_game('flags', ctx, rounds, continent)
+	@command()
+	async def geograph(self, ctx, game, rounds='10', continent='Мир'):
+		if ctx.invoked_subcommand: return
+		if game in ('flags', 'old', 'maps', 'capitals', 'pst_capitals'):
+			await start_game(game, ctx, rounds, 'Мир' if game == 'pst_capitals' else continent)
+		elif game == 'stop':
+			await ctx.send('Игра закончена.')
+			del games[ctx.channel.id]
+		else:
+			await ctx.send('Данной игры не существует. Доступные игры: flags, old, maps, capitals, pst_capitals.')
 
-	@geograph.command(name='old', brief='Угадайте бывшую страну по флагу')
-	async def old_cmd(self, ctx, rounds='10', continent='Мир'):
-		await start_game('old', ctx, rounds, continent)
-
-	@geograph.command(name='maps', brief='Угадайте страну по расположению на карте')
-	async def maps_cmd(self, ctx, rounds='10', continent='Мир'):
-		await start_game('maps', ctx, rounds, continent)
-			
-	@geograph.command(name='capitals', brief='Угадайте столицу страны')
-	async def capitals_cmd(self, ctx, rounds='10', continent='Мир'):
-		await start_game('capitals', ctx, rounds, continent)
-
-	@geograph.command(name='pst_capitals', brief='Угадайте столицу субъекта постсоветских стран')
-	async def pst_capitals_cmd(self, ctx, rounds='10'):
-		await start_game('pst_capitals', ctx, rounds, 'Мир')
-
-	@geograph.command(brief='Останавливает игру.')
-	async def stop(self, ctx):
-		await ctx.send('Игра закончена.')
-		del games[ctx.channel.id]
+	@app_commands.command(name='geograph')
+	@app_commands.describe(game='Игра, в которую вы хотите сыграть', rounds='Количество раундов в игре', continent='Континент, страны которого будут в игре')
+	@app_commands.choices(
+		game=[app_commands.Choice(name=v, value=k) for k,v in games_name.items()],
+		continent=[app_commands.Choice(name=i, value=i) for i in data['continents']['general']]
+	)
+	async def geograph_slash(self, interaction, game:app_commands.Choice[str], rounds:int=10, continent:app_commands.Choice[str]=None):
+		if game.value != 'pst_capitals' and getattr(continent, 'value', None):
+			await start_game(game.value, interaction, rounds, continent.value)
+		else:
+			await start_game(game.value, interaction, rounds, 'Мир')
