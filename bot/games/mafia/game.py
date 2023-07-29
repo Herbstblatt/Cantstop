@@ -88,48 +88,6 @@ async def summarize(mafia):
 	else:
 		mafia['time'] = 'night'
 
-class InviteMember(discord.ui.View):
-	def __init__(self, room, member):
-		super().__init__()
-		self.room = room
-		self.member = member
-	
-	@discord.ui.button(label='Согласиться', style=ButtonStyle.green)
-	async def accept(self, interaction, button):
-		if interaction.user.id == self.member.id:
-			if self.room.state != RoomState.waiting:
-				await interaction.response.send_message('Данная игра уже начата или отменена.', ephemeral=True)
-			elif self.member in self.room.participants:
-				await interaction.response.send_message('Вы уже находитесь в данной комнате.', ephemeral=True)
-			elif self.room.manager.check_user(self.member):
-				await interaction.response.send_message('Вы уже находитесь в другой комнате.', ephemeral=True)
-			else:
-				if self.member.id in getattr(self.room, 'declined', []):
-					self.room.declined.remove(self.member.id)
-				self.clear_items()
-				self.add_item(discord.ui.Button(label='Одобрено', style=ButtonStyle.green, disabled=True))
-				await self.room.add_participant(self.member)
-				await self.room.view.message.edit(embed=self.room.view.render())
-				await interaction.response.edit_message(view=self)
-		else:
-			await interaction.response.send_message('Вы не участвуете в данном приглашении.', ephemeral=True)
-
-	@discord.ui.button(label='Отказаться', style=ButtonStyle.red)
-	async def decline(self, interaction, button):
-		if interaction.user.id == self.member.id:
-			if self.member.id in getattr(self.room, 'declined', []):
-				await interaction.response.send_message('Вы уже отказалиcь от данного приглашения.', ephemeral=True)
-			else:
-				if not getattr(self.room, 'declined', None):
-					self.room.declined = [self.member.id]
-				else:
-					self.room.declined.append(self.member.id)
-				self.clear_items()
-				self.add_item(discord.ui.Button(label='Отклонено', style=ButtonStyle.red, disabled=True))
-				await interaction.response.edit_message(view=self)
-		else:
-			await interaction.response.send_message('Вы не участвуете в данном приглашении.', ephemeral=True)
-
 class SelectNames(discord.ui.View):
 	def __init__(self, room):
 		super().__init__()
