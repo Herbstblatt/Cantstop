@@ -1,4 +1,5 @@
 import enum
+import importlib
 from typing import Any, Optional, TypeVar, Union
 
 from discord import ui
@@ -42,7 +43,11 @@ class Room:
             manager=context.bot.rooms
         )
         room.view = RoomView(room)
-        
+
+        if game.name == 'Мафия':
+            mafia = importlib.import_module('bot.games.mafia.selects')
+            room.view.add_item(mafia.OpenSettings(room))
+
         msg = await context.send(
             view=room.view,
             embed=room.view.render()
@@ -164,8 +169,13 @@ class RoomView(ui.View):
 
     @ui.button(label="Покинуть игру", style=discord.ButtonStyle.red)
     async def exit(self, interaction: discord.Interaction, _):
-        await self.room.remove_participant(interaction.user)
-        await interaction.response.edit_message(embed=self.render())
+        if interaction.user == self.room.host:
+            await interaction.response.send_message('Ведущий не может покинуть игру', ephemeral=True)
+        elif interaction.user not in self.room.participants:
+            await interaction.response.send_message('Вы не присоединялись к данной игре', ephemeral=True)
+        else:
+            await self.room.remove_participant(interaction.user)
+            await interaction.response.edit_message(embed=self.render())
 
     @ui.button(
         label="Начать игру", 

@@ -33,7 +33,48 @@ class GameTransformer(app_commands.Transformer):
     @classmethod
     async def convert(cls, ctx: Context, arg: str):
         return ctx.bot.games[arg]
-    
+
+class InviteMember(discord.ui.View):
+	def __init__(self, room, member):
+		super().__init__()
+		self.room = room
+		self.member = member
+	
+	@discord.ui.button(label='Согласиться', style=discord.ButtonStyle.green)
+	async def accept(self, interaction, button):
+		if interaction.user.id == self.member.id:
+			if self.room.state != RoomState.waiting:
+				await interaction.response.send_message('Данная игра уже начата или отменена.', ephemeral=True)
+			elif self.member in self.room.participants:
+				await interaction.response.send_message('Вы уже находитесь в данной комнате.', ephemeral=True)
+			elif self.room.manager.check_user(self.member):
+				await interaction.response.send_message('Вы уже находитесь в другой комнате.', ephemeral=True)
+			else:
+				if self.member.id in getattr(self.room, 'declined', []):
+					self.room.declined.remove(self.member.id)
+				self.clear_items()
+				self.add_item(discord.ui.Button(label='Одобрено', style=discord.ButtonStyle.green, disabled=True))
+				await self.room.add_participant(self.member)
+				await self.room.view.message.edit(embed=self.room.view.render())
+				await interaction.response.edit_message(view=self)
+		else:
+			await interaction.response.send_message('Вы не участвуете в данном приглашении.', ephemeral=True)
+
+	@discord.ui.button(label='Отказаться', style=discord.ButtonStyle.red)
+	async def decline(self, interaction, button):
+		if interaction.user.id == self.member.id:
+			if self.member.id in getattr(self.room, 'declined', []):
+				await interaction.response.send_message('Вы уже отказалиcь от данного приглашения.', ephemeral=True)
+			else:
+				if getattr(self.room, 'declined', None):
+					self.room.declined.append(self.member.id)
+				else:
+					self.room.declined = [self.member.id]
+				self.clear_items()
+				self.add_item(discord.ui.Button(label='Отклонено', style=discord.ButtonStyle.red, disabled=True))
+				await interaction.response.edit_message(view=self)
+		else:
+			await interaction.response.send_message('Вы не участвуете в данном приглашении.', ephemeral=True)
 
 class Commands(commands.Cog):
     def __init__(self, bot: "Bot") -> None:
@@ -52,9 +93,15 @@ class Commands(commands.Cog):
             color=discord.Color.blurple()
         )
         for game in self.bot.games.values():
+            description = f'**Описание**: {game.description}\n**Количество участников**: '
+            if game.min_players and game.max_players:
+                description += f'{game.min_players}–{game.max_players}'
+            else:
+                description += 'Не ограничено'
             em.add_field(
                 name=game.name,
-                value=f"**Описание**: {game.description}\n**Количество участников**: {game.min_players}—{game.max_players}"
+                value=description,
+                inline=False
             )
         await ctx.send(embed=em)
 
@@ -70,9 +117,12 @@ class Commands(commands.Cog):
             color=discord.Color.blurple(),
             description=game.description
         )
+        players = 'Не ограничено'
+        if game.min_players and game.max_players:
+            players = f'{game.min_players}–{game.max_players}'
         em.add_field(
-            name="Количество участников",
-            value=f"{game.min_players}—{game.max_players}",
+            name='Количество участников',
+            value=players,
             inline=True
         )
         await ctx.send(embed=em)
@@ -101,7 +151,27 @@ class Commands(commands.Cog):
             await game.start(room)
         else:
             self.bot.rooms.delete(room)
-    
+
+    @room.command()
+    @commands.guild_only()
+    async def invite(self, ctx, member: discord.Member):
+        """Приглашает игрока в комнату
+
+        Аргументы:
+            member: Игрок, которого нужно пригласить
+        """
+        for room in self.bot.rooms:
+            if room.state == RoomState.waiting and room.host.id == ctx.author.id and room.view.message.channel.id == ctx.channel.id:
+                if member in room.participants:
+                    await ctx.send('Данный игрок уже находится в комнате.', ephemeral=True)
+                elif room.manager.check_user(member):
+                    await ctx.send('Данный игрок уже находится в другой комнате.', ephemeral=True)
+                elif member.id in getattr(room, 'declined', []):
+                    await ctx.send('Данный игрок отказался от приглашения в комнату.', ephemeral=True)
+                else:
+                    await ctx.send(f'{ctx.author.global_name} приглашает игрока {member.mention} в игру {room.game.emoji} {room.game.name}.', view=InviteMember(room, member))
+            return
+        await ctx.send('Вы не являетесь ведущим ни в одной из комнат в данном канале.', ephemeral=True)
 
 async def setup(bot: "Bot") -> None:
     await bot.add_cog(Commands(bot))

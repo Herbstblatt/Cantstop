@@ -95,16 +95,17 @@ class ContinueButton(ui.Button):
 class Game(ui.View):
     children: List[Union[ForwardButton, StopButton, ContinueButton]]
 
-    def __init__(self, players):
+    def __init__(self, room):
         super().__init__(timeout=None)
-        random.shuffle(players)
-        self.players_order = cycle(players)
+        random.shuffle(room.participants)
+        self.players_order = cycle(room.participants)
         self.current_player = next(self.players_order)
 
         points = [Point(key) for key in POINTS.keys()]
         random.shuffle(points)
-        self.players_colors = dict(zip(players, points))
+        self.players_colors = dict(zip(room.participants, points))
 
+        self.room = room
         self.field = Field()
         self.current_field = copy.deepcopy(self.field)
         self.taken_columns = defaultdict(int)
@@ -208,9 +209,10 @@ class Game(ui.View):
         if not reset:
             await interaction.response.edit_message(view=self, content=self.content)
         else:
-            await interaction.edit_original_message(view=self, content=self.content)
-
+            await interaction.edit_original_response(view=self, content=self.content)
         await self.check_turn_ability(interaction)
+        await self.last_reminder.delete()
+        self.last_reminder = await interaction.followup.send(f'Your turn, {self.current_player.mention}!')
 
     async def finalize(self, interaction, winner):
         self.clear_items()
@@ -220,6 +222,6 @@ class Game(ui.View):
         
         await interaction.response.edit_message(view=self, content=self.content)
         await interaction.followup.send(f"The game has ended! {winner.mention} won! :tada:")
+        await self.last_reminder.delete()
+        self.room.manager.delete(self.room)
         self.stop()
-
-

@@ -12,7 +12,7 @@ class Bot(commands.Bot):
     def __init__(self, **kwargs: dict[str, Any]):
         super().__init__(
             command_prefix=commands.when_mentioned_or('-'), 
-            intents=discord.Intents.default(),  
+            intents=discord.Intents.all(),  
             **kwargs
         )
 
