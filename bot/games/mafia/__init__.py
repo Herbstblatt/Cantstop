@@ -3,7 +3,7 @@ import asyncio
 from random import randint, choice
 from bot.core.invite import RoomState
 from .selects import SelectPlayer
-from .game import roles, values, sentences, summarize, InviteMember
+from .game import roles, values, sentences, summarize
 mafia = {}
 last_id = {}
 get_mafia = lambda id: {v:k for k,v in mafia[id]['roles'].items()}.get('mafia')
@@ -37,18 +37,7 @@ async def send_dm(role, view, channel):
 			pass
 
 async def setup(bot):
-	@bot.command()
-	async def invite(ctx, member: discord.Member):
-		for room in bot.rooms:
-			if room.state == RoomState.waiting and room.host.id == ctx.author.id and room.view.message.channel.id == ctx.channel.id:
-				if member in room.participants:
-					await ctx.send('Данный игрок уже находится в комнате.')
-				elif member.id in getattr(room, 'declined', []):
-					await ctx.send('Данный игрок отказался от приглашения в комнату.')
-				else:
-					await ctx.send(f'{ctx.author.global_name} приглашает игрока {member.mention} в игру {room.game.emoji} {room.game.name}.', view=InviteMember(room, member))
-				return
-		await ctx.send('Вы не являетесь ведущим ни в одной из комнат в данном канале.')
+	pass
 
 async def start(room):
 	if not getattr(room, 'settings', None):
