@@ -1,5 +1,5 @@
 from discord import ui, ButtonStyle, SelectOption
-from .game import roles, values, summarize, InviteMember, SelectNames, SelectRoles, SelectTimes
+from .game import roles, values, summarize, SelectNames, SelectRoles, SelectTimes
 get_name = lambda user: user.global_name if user.global_name else user.name
 roles_list = {
 	'standard': lambda role: values['roles_list'][role][0].lower(),
